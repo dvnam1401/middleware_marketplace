@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h2>Sản phẩm thương mại</h2>
+    <div class="product-list">
+        {% for product in products %}
+            <div class="product-item">
+                <!-- Hình ảnh (chỉ lấy ảnh đầu tiên) -->
+                <img src="{{ product.images.0 }}" alt="{{ product.name }}" class="product-image">
+                
+                <!-- Giá và giảm giá (giả định có trường discount) -->
+                <div class="price-section">
+                    {% if product.discount %}
+                        <span class="original-price">{{ product.price }} VNĐ</span>
+                        <span class="discount">(-{{ product.discount }}%)</span>
+                        <span class="final-price">{{ product.price|add:"-50" }} VNĐ</span> <!-- Giả định giảm 50, thay bằng logic thực tế -->
+                    {% else %}
+                        <span class="final-price">{{ product.price }} VNĐ</span>
+                    {% endif %}
+                </div>
+
+                <!-- Tên sản phẩm -->
+                <div class="product-name">
+                    {{ product.name }} <!-- Loại bỏ thẻ <a> cũ -->
+                </div>
+
+                <!-- Chi tiết thêm (giả định có lượt xem, đánh giá) -->
+                <div class="product-details">
+                    <span class="views">👀 {{ product.views|default:"33K" }}</span>
+                    <span class="rating">⭐ {{ product.rating|default:"0" }} / 5</span>
+                </div>
+
+                <!-- Nút xem chi tiết -->
+                <button class="detail-button" data-product-id="{{ product.product_id }}">Xem chi tiết</button>
+            </div>
+        {% empty %}
+            <p>Không có sản phẩm</p>
+        {% endfor %}
+    </div>
+    <!-- Phần mới: Nút chuyển sang chức năng workout plan -->
+    <div class="workout-section">
+        <h2>Tạo Kế Hoạch Tập Luyện</h2>
+        <p>Nhập thông tin của bạn để nhận kế hoạch tập luyện cá nhân hóa từ server2!</p>
+        <button class="workout-button" onclick="window.location.href='{% url 'workout_form' %}'">Tạo Kế Hoạch Tập Luyện</button>
+    </div>
+{% endblock %}

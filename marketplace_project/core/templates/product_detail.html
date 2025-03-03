@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="product-detail">
+        {% if product %}
+            <!-- Phần tiêu đề và thông tin sản phẩm -->
+            <div class="product-header">
+                <h1>{{ product.name }}</h1>
+                <div class="rating">
+                    ⭐ {{ product.rating|default:"0" }} / 5 | {{ product.views|default:"1,3K sold" }} | <span class="store">Shopee</span>
+                </div>
+                <div class="flash-sale">FLASH SALE</div>
+            </div>
+
+            <!-- Hình ảnh sản phẩm (chỉ lấy ảnh đầu tiên) -->
+            <div class="product-image">
+                <img src="{{ product.images.0 }}" alt="{{ product.name }}" style="max-width: 100%;">
+            </div>
+
+            <!-- Giá cả -->
+            <div class="price-section">
+                {% if product.original_price %}
+                    <span class="original-price">{{ product.original_price }} VNĐ</span>
+                    <span class="discount">(-{{ product.discount|default:"41" }}%)</span>
+                {% endif %}
+                <span class="final-price">đ{{ product.price }} VNĐ</span>
+            </div>
+
+            <!-- Thông tin chi tiết -->
+            <div class="product-info">              
+
+            <!-- Mô tả sản phẩm -->
+            <div class="product-description">
+                <h3>Mô tả sản phẩm</h3>
+                <p>{{ product.description|safe }}</p>
+            </div>
+
+            <!-- Nút mua hàng -->
+            <div class="buy-section">
+                <button class="add-to-cart">Thêm Vào Giỏ Hàng</button>
+                <button class="buy-now">Mua Ngay</button>
+            </div>
+
+            <!-- Số lượng và đánh giá -->
+            <div class="quantity-section">
+                <span>Số Lượng: </span>
+                <button id="decrease">-</button>
+                <span id="quantity">1</span>
+                <button id="increase">+</button>
+            </div>
+
+            <!-- Thông báo (ẩn ban đầu) -->
+            <div id="order-message" style="display: none; color: green; margin-top: 10px;"></div>
+
+            <!-- Chia sẻ và thích -->
+            <div class="social-section">
+                <span>Chia sẻ: </span>
+                <i class="fab fa-facebook-f"></i>
+                <i class="fab fa-pinterest-p"></i>
+                <i class="fab fa-twitter"></i>
+                <span> | Đã thích (145)</span>
+            </div>
+        {% else %}
+            <p>Sản phẩm không tồn tại.</p>
+        {% endif %}
+    </div>
+
+    <!-- Truyền biến từ Django sang JavaScript -->
+    <script>
+        var apiOrdersUrl = "{{ api_orders_url }}";
+        var accessToken = "{{ access_token }}";
+    </script>
+{% endblock %}

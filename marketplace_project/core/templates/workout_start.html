@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="workout-start">
+        <h2>{{ day.day_of_week }} / {{ day.day_of_week_vi }}</h2>
+        <div class="exercise-list">
+            {% for exercise in day.WorkoutExercises %}
+                <div class="exercise-item">
+                    <h3>{{ exercise.Exercise.name }} / {{ exercise.Exercise.name_vi }}</h3>
+                    <p>Sets: {{ exercise.sets|default:"N/A" }}, Reps: {{ exercise.reps|default:"N/A" }}, Rest: {{ exercise.rest|default:"N/A" }} sec</p>
+                    <p>Notes: {{ exercise.notes }} / {{ exercise.notes_vi }}</p>
+                    <p>Steps: {{ exercise.Exercise.step|linebreaks }} / {{ exercise.Exercise.step_vi|linebreaks }}</p>
+                    <img src="{{ exercise.Exercise.video_male.0|default:'https://via.placeholder.com/300' }}" alt="Exercise Video" class="exercise-video">
+                </div>
+            {% endfor %}
+        </div>
+        <button onclick="goBack()">Back</button>
+    </div>
+
+    <script>
+        function goBack() {
+            window.location.href = "{% url 'workout_details' %}";
+        }
+    </script>
+{% endblock %}

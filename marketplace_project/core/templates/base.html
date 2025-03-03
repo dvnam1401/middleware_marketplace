@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Marketplace</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Thêm jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Font Awesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>Marketplace</h1>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <!-- Thêm JavaScript -->
+    <script>
+        $(document).ready(function() {
+            $('.detail-button').on('click', function() {
+                var productId = $(this).data('product-id');
+                window.location.href = '/product/' + productId + '/';
+            });
+        });
+        $(document).ready(function() {
+            let quantity = 1;
+            const productId = {{ product.product_id|default:0 }}; // Lấy product_id từ view
+            const $quantitySpan = $('#quantity');
+            const $orderMessage = $('#order-message');
+
+            // Tăng số lượng
+            $('#increase').on('click', function() {
+                quantity++;
+                $quantitySpan.text(quantity);
+            });
+
+            // Giảm số lượng (không nhỏ hơn 1)
+            $('#decrease').on('click', function() {
+                if (quantity > 1) {
+                    quantity--;
+                    $quantitySpan.text(quantity);
+                }
+            });
+
+            // Xử lý nút Mua Ngay
+            $('.buy-now').on('click', function() {
+                const productId = {{ product.product_id|default:0 }}; // Lấy từ view
+                if (!accessToken) {
+                    $orderMessage.text('Vui lòng đăng nhập để đặt hàng!').css('color', 'red').show();
+                    setTimeout(function() {
+                        $orderMessage.hide();
+                    }, 3000);
+                    return;
+                }
+
+                const data = {
+                    productid: productId,
+                    number_of_items: quantity
+                };
+
+                $.ajax({
+                    url: apiOrdersUrl,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    headers: {
+                        'Authorization': 'Bearer ' + accessToken
+                    },
+                    success: function(response) {
+                        $orderMessage.text('Đặt hàng thành công!').show();
+                        setTimeout(function() {
+                            $orderMessage.hide();
+                        }, 3000);
+                    },
+                    error: function(xhr, status, error) {
+                        $orderMessage.text('Đặt hàng thất bại. Vui lòng thử lại!').css('color', 'red').show();
+                        console.log(xhr.responseText); // Debug lỗi
+                        setTimeout(function() {
+                            $orderMessage.hide();
+                        }, 3000);
+                    }
+                });
+            });     
+        });
+    </script>
+</body>
+</html>

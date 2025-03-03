@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="workout-form-container">
+        <h2 class="form-title">Enter Your Workout Plan Details</h2>
+        <form method="POST" action="{% url 'workout_plan' %}" class="workout-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="gender" class="form-label">Gender:</label>
+                <select name="gender" id="gender" class="form-input" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="weight" class="form-label">Weight (kg):</label>
+                <input type="number" name="weight" id="weight" step="0.1" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="height" class="form-label">Height (m):</label>
+                <input type="number" name="height" id="height" step="0.01" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age" class="form-label">Age:</label>
+                <input type="number" name="age" id="age" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="continent" class="form-label">Continent:</label>
+                <select name="continent" id="continent" class="form-input" required>
+                    <option value="asian">Asian</option>
+                    <option value="european">European</option>
+                    <option value="african">African</option>
+                    <option value="american">American</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-button">Generate Workout Plan</button>
+        </form>
+    </div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="workout-details">
+        <h2>{{ workout_data.DT.training_split }} / {{ workout_data.DT.training_split_vi }}</h2>
+        <div class="day-buttons">
+            {% for day in workout_data.DT.WorkoutDays %}
+                <button onclick="showDayWorkout('{{ day.day_of_week }}')">{{ day.day_of_week }} / {{ day.day_of_week_vi }}</button>
+            {% endfor %}
+        </div>
+        <div id="workout-day-content">
+            <!-- Nội dung ngày tập sẽ được cập nhật bằng JavaScript -->
+        </div>
+        <button id="start-workout" onclick="startWorkout()">Start Workout</button>
+    </div>
+
+    <script>
+        let currentDay = null;
+
+        function showDayWorkout(day) {
+            currentDay = day;
+            const dayData = {{ workout_data.DT.WorkoutDays|safe }};
+            const selectedDay = dayData.find(d => d.day_of_week === day);
+            if (selectedDay) {
+                let content = `<h3>${selectedDay.day_of_week} / ${selectedDay.day_of_week_vi}</h3>`;
+                content += '<ul>';
+                selectedDay.WorkoutExercises.forEach(exercise => {
+                    content += `<li>${exercise.Exercise.name} / ${exercise.Exercise.name_vi} - ${exercise.sets} sets, ${exercise.reps}, ${exercise.rest} sec rest</li>`;
+                });
+                content += '</ul>';
+                document.getElementById('workout-day-content').innerHTML = content;
+            }
+        }
+
+        function startWorkout() {
+            if (currentDay) {
+                window.location.href = "{% url 'workout_start' %}?day=" + currentDay;
+            } else {
+                alert('Please select a day first!');
+            }
+        }
+    </script>
+{% endblock %}

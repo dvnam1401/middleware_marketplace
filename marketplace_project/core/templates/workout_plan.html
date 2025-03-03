@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h2>Plan Your Workout</h2>
+    <div class="workout-container">
+        {% if workout_data and workout_data.EC == 0 %}
+            <div class="workout-card">
+                <img src="https://example.com/workout-image.jpg" alt="Workout Image" class="workout-image" onclick="showWorkoutDetails()">
+                <div class="workout-info">
+                    <span class="level">{{ workout_data.DT.training_level }} / {{ workout_data.DT.training_level_vi }}</span>
+                    <h3>{{ workout_data.DT.training_split }} / {{ workout_data.DT.training_split_vi }}</h3>
+                    <p>{{ workout_data.DT.goal }} / {{ workout_data.DT.goal_vi }}</p>
+                    <ul>
+                        {% for consideration in workout_data.DT.ImportantConsiderations %}
+                            <li>{{ consideration.description }} / {{ consideration.description_vi }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div id="chat-bubble" class="chat-bubble">Chat with us!</div>
+        {% else %}
+            <p>Failed to load workout plan. Please try again.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function showWorkoutDetails() {
+            window.location.href = "{% url 'workout_details' %}"; // Chuyển đến trang chi tiết
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,3 @@
+# Bỏ qua toàn bộ thư mục docs và các file bên trong
+docs/
+venv/
