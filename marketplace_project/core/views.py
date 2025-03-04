@@ -18,37 +18,6 @@ def product_detail(request, product_id):
     access_token = config('SERVER1_API_TOKEN')
     return render(request, 'product_detail.html', {'product': product, 'api_orders_url': api_orders_url, 'access_token': access_token})
 
-# def workout_plan(request):
-#     if request.method == 'POST':
-#         gender = request.POST.get('gender')
-#         weight = request.POST.get('weight')
-#         height = request.POST.get('height')
-#         age = request.POST.get('age')
-#         continent = request.POST.get('continent')
-
-#         # Chuẩn bị dữ liệu gửi lên API
-#         data = {
-#             'Gender': gender,
-#             'Weight': float(weight),
-#             'Height': float(height),
-#             'Age': int(age),
-#             'continent': continent
-#         }
-
-#         # Gọi API của server2
-#         api_workout_url = config('API_WORKOUT_URL')
-#         workout_token = config('WORKOUT_TOKEN')
-#         headers = {'Authorization': f'Bearer {workout_token}'}
-#         response = requests.post(api_workout_url, json=data, headers=headers)
-
-#         if response.status_code == 200:
-#             workout_data = response.json()
-#             return render(request, 'workout_plan.html', {'workout_data': workout_data})
-#         else:
-#             return JsonResponse({'error': 'Failed to fetch workout plan'}, status=500)
-
-#     return render(request, 'workout_form.html')
-
 # View để hiển thị form nhập liệu
 def workout_form(request):
     return render(request, 'workout_form.html')
@@ -120,7 +89,6 @@ def save_workout_data(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
 
 # Dữ liệu giả từ file JSON
-
 def workout_plan(request):
     if request.method == 'POST':
         gender = request.POST.get('gender')
@@ -135,6 +103,51 @@ def workout_plan(request):
         return render(request, 'workout_plan.html', {'workout_data': workout_data})
 
     return redirect('workout_form')
+
+def workout_plan(request):
+    if request.method == 'POST':
+        # Lấy thông tin từ form
+        gender = request.POST.get('gender')
+        weight = request.POST.get('weight')
+        height = request.POST.get('height')
+        age = request.POST.get('age')
+        continent = request.POST.get('continent')
+
+        # Chuẩn bị dữ liệu gửi lên API
+        data = {
+            'Gender': gender,
+            'Weight': float(weight),
+            'Height': float(height),
+            'Age': int(age),
+            'continent': continent
+        }
+
+        # Gọi API của server2
+        api_workout_url = config('API_WORKOUT_URL')  # Lấy URL API từ config
+        workout_token = config('WORKOUT_TOKEN')  # Lấy token từ config
+        headers = {'Authorization': f'Bearer {workout_token}'}  # Thêm header Authorization
+
+        try:
+            response = requests.post(api_workout_url, json=data, headers=headers)
+            
+            if response.status_code == 200:
+                # Nếu thành công, lấy dữ liệu trả về từ API
+                workout_data = response.json()
+                
+                # Lưu dữ liệu vào session để sử dụng trong các trang khác
+                request.session['workout_data'] = workout_data
+
+                return render(request, 'workout_plan.html', {'workout_data': workout_data})
+            else:
+                # Nếu API trả về lỗi, trả về thông báo lỗi
+                return JsonResponse({'error': 'Failed to fetch workout plan from API'}, status=500)
+        
+        except requests.exceptions.RequestException as e:
+            # Nếu có lỗi kết nối API, trả về thông báo lỗi
+            return JsonResponse({'error': f'API request failed: {str(e)}'}, status=500)
+
+    # Nếu không phải POST, redirect về form
+    return render(request, 'workout_form.html')
 
 mock_workout_data = {
     "EC": 0,

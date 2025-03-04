@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="workout-container">
   <!-- Background Image with Day Navigation -->
@@ -9,8 +10,8 @@
       class="bg-image"
     />
     <!-- Navigation Arrows for Days -->
-    <button class="carousel-btn day-left-btn" id="day-left-btn">◀</button>
-    <button class="carousel-btn day-right-btn" id="day-right-btn">▶</button>
+    <button class="carousel-btn day-left-btn" id="day-left-btn" onclick="prevWorkout()">◀</button>
+    <button class="carousel-btn day-right-btn" id="day-right-btn" onclick="nextWorkout()">▶</button>
     <!-- Workout Plan Card -->
     <div class="workout-plan-card">
       <h3 id="workout-title">Day 1 Workout Plan</h3>
@@ -30,7 +31,11 @@
     <!-- Pagination Dots -->
     <div class="pagination-dots">
       {% for day in workout_data.DT.WorkoutDays %}
-        <span class="dot {% if forloop.counter0 == 0 %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+        <span
+          class="dot {% if forloop.counter0 == 0 %}active{% endif %}"
+          data-index="{{ forloop.counter0 }}"
+          onclick="setActiveDay({{ forloop.counter0 }})"
+        ></span>
       {% endfor %}
     </div>
   </div>
@@ -46,200 +51,37 @@
     </p>
     <div class="exercise-cards" id="exercise-cards">
       {% for exercise in workout_data.DT.WorkoutDays.0.WorkoutExercises|slice:":3" %}
-      <div
-        class="exercise-card"
-        data-video-url="{{ exercise.Exercise.video_male.0|escapejs }}"
-      >
-        <video
-          controls
-          class="exercise-video"
-          id="exercise-video-{{ forloop.counter0 }}"
-        >
-          <source src="{{ exercise.Exercise.video_male.0 }}" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        <h4>{{ exercise.Exercise.name }}</h4>
-        <p>
-          {{ exercise.reps }} | {{ exercise.Exercise.GroupMuscle.name }} | {{
-          exercise.Exercise.Difficulty.name }}
-        </p>
-      </div>
+        <div class="exercise-card" data-video-url="{{ exercise.Exercise.video_male.0|escapejs }}">
+          <video controls class="exercise-video" id="exercise-video-{{ forloop.counter0 }}">
+            <source src="{{ exercise.Exercise.video_male.0 }}" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <h4>{{ exercise.Exercise.name }}</h4>
+          <p>
+            {{ exercise.reps }} | {{ exercise.Exercise.GroupMuscle.name }} | 
+            {{ exercise.Exercise.Difficulty.name }}
+          </p>
+        </div>
       {% endfor %}
     </div>
     <!-- Navigation Arrows for Exercises -->
-    <button class="carousel-btn exercise-left-btn" id="exercise-left-btn">
+    <button class="carousel-btn exercise-left-btn" id="exercise-left-btn" onclick="prevExercise()">
       ◀
     </button>
-    <button class="carousel-btn exercise-right-btn" id="exercise-right-btn">
+    <button class="carousel-btn exercise-right-btn" id="exercise-right-btn" onclick="nextExercise()">
       ▶
     </button>
     <div class="pagination-dots-exercise">
       {% for i in workout_data.DT.WorkoutDays.0.WorkoutExercises|slice:":3" %}
-      <span
-        class="dot-exercise {% if forloop.first %}active{% endif %}"
-        data-index="{{ forloop.counter0 }}"
-      ></span>
+        <span
+          class="dot-exercise {% if forloop.first %}active{% endif %}"
+          data-index="{{ forloop.counter0 }}"
+          onclick="setActiveExercise({{ forloop.counter0 }})"
+        ></span>
       {% endfor %}
     </div>
   </div>
 </div>
-
-<script>
-  // Hàm tải video về khi nhấp vào
-  function downloadVideo(videoId) {
-      const videoElement = document.getElementById(videoId);
-      const videoUrl = videoElement.querySelector('source').src;
-      const link = document.createElement('a');
-      link.href = videoUrl;
-      link.download = `${videoId}.mp4`; // Tên file tải về
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  }
-
-  // Carousel for days
-  let currentDayIndex = 0; // Bắt đầu với Day 1 (index 0)
-  const workoutDays = {{ workout_data.DT.WorkoutDays|safe }};
-  const titleElement = document.getElementById('workout-title');
-  const exerciseListElement = document.getElementById('exercise-list');
-  const dayDots = document.querySelectorAll('.dot');
-
-  function updateWorkout() {
-      const currentDay = workoutDays[currentDayIndex];
-      titleElement.textContent = `Day ${currentDayIndex + 1} Workout Plan`;
-      exerciseListElement.innerHTML = currentDay.WorkoutExercises.map(exercise =>
-          `<li>${exercise.Exercise.name}</li>`
-      ).join('');
-      document.querySelector('.workout-info span:first-child').textContent = `💪 ${currentDay.WorkoutExercises.length} Exercises`;
-      document.querySelector('.workout-info span:last-child').textContent = `⏱ About ${currentDay.duration} mins`;
-      document.querySelector('.carousel-title').textContent = `${currentDay.WorkoutExercises.length} EXERCISES IN THIS WORKOUT`;
-      updateExerciseCarousel();
-  }
-
-  function prevWorkout() {
-      if (currentDayIndex > 0) {
-          currentDayIndex--;
-          updateWorkout();
-          updateActiveDot();
-      }
-  }
-
-  function nextWorkout() {
-      if (currentDayIndex < workoutDays.length - 1) {
-          currentDayIndex++;
-          updateWorkout();
-          updateActiveDot();
-      }
-  }
-
-  function updateActiveDot() {
-      dayDots.forEach((dot, i) => {
-          if (i === currentDayIndex) {
-              dot.classList.add('active');
-          } else {
-              dot.classList.remove('active');
-          }
-      });
-  }
-
-  // Add click event for day dots
-  dayDots.forEach(dot => {
-      dot.addEventListener('click', function() {
-          currentDayIndex = parseInt(this.getAttribute('data-index'));
-          updateWorkout();
-          updateActiveDot();
-      });
-  });
-
-  // Carousel for exercises
-  let currentExerciseIndex = 0;
-  let exerciseCards = document.getElementById('exercise-cards');
-  let exercisePageInfo = document.getElementById('exercise-page-info');
-  const exerciseLeftBtn = document.getElementById('exercise-left-btn');
-  const exerciseRightBtn = document.getElementById('exercise-right-btn');
-
-  function updateExerciseCarousel() {
-      const currentDay = workoutDays[currentDayIndex];
-      const exercises = currentDay.WorkoutExercises;
-      const start = currentExerciseIndex * 3;
-      const end = Math.min(start + 3, exercises.length);
-      
-      exerciseCards.innerHTML = '';
-      
-      for (let i = start; i < end; i++) {
-          const exercise = exercises[i];
-          const card = document.createElement('div');
-          card.className = 'exercise-card';
-          card.dataset.videoUrl = exercise.Exercise.video_male[0];
-          
-          card.innerHTML = `
-              <video controls class="exercise-video" id="exercise-video-${i}">
-                  <source src="${exercise.Exercise.video_male[0]}" type="video/mp4">
-                  Your browser does not support the video tag.
-              </video>
-              <h4>${exercise.Exercise.name}</h4>
-              <p>${exercise.reps} | ${exercise.Exercise.GroupMuscle.name} | ${exercise.Exercise.Difficulty.name}</p>
-          `;
-          
-          exerciseCards.appendChild(card);
-      }
-      
-      exercisePageInfo.textContent = `Showing ${start + 1} to ${end} of ${exercises.length}`;
-      
-      // Update pagination dots
-      const dotsContainer = document.querySelector('.pagination-dots-exercise');
-      dotsContainer.innerHTML = '';
-      
-      const pageCount = Math.ceil(exercises.length / 3);
-      for (let i = 0; i < pageCount; i++) {
-          const dot = document.createElement('span');
-          dot.className = `dot-exercise ${i === currentExerciseIndex ? 'active' : ''}`;
-          dot.dataset.index = i;
-          dot.addEventListener('click', function() {
-              currentExerciseIndex = parseInt(this.dataset.index);
-              updateExerciseCarousel();
-          });
-          dotsContainer.appendChild(dot);
-      }
-  }
-
-  function prevExercise() {
-      if (currentExerciseIndex > 0) {
-          currentExerciseIndex--;
-          updateExerciseCarousel();
-      }
-  }
-
-  function nextExercise() {
-      const currentDay = workoutDays[currentDayIndex];
-      const maxPage = Math.ceil(currentDay.WorkoutExercises.length / 3) - 1;
-      if (currentExerciseIndex < maxPage) {
-          currentExerciseIndex++;
-          updateExerciseCarousel();
-      }
-  }
-
-  // Gắn sự kiện ban đầu cho các nút
-  document.addEventListener('DOMContentLoaded', function() {
-      const dayLeftBtn = document.getElementById('day-left-btn');
-      const dayRightBtn = document.getElementById('day-right-btn');
-      
-      if (dayLeftBtn) dayLeftBtn.onclick = prevWorkout;
-      if (dayRightBtn) dayRightBtn.onclick = nextWorkout;
-      if (exerciseLeftBtn) exerciseLeftBtn.onclick = prevExercise;
-      if (exerciseRightBtn) exerciseRightBtn.onclick = nextExercise;
-  });
-
-  // Initial load
-  updateWorkout();
-  updateExerciseCarousel();
-
-  // Function to navigate to workout details
-  function showWorkoutDetails() {
-    // Change this line to use the day format your view expects
-    window.location.href = "{% url 'workout_start' %}?day=Day " + (currentDayIndex + 1);
-}
-</script>
 
 <style>
   /* Reset mọi giá trị mặc định */
@@ -343,8 +185,21 @@
     border: none;
     padding: 10px;
     cursor: pointer;
-    z-index: 2;
-    pointer-events: auto; /* Đảm bảo nút có thể nhấp */
+    z-index: 100; /* Increased z-index */
+    pointer-events: auto;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  }
+
+  .carousel-btn:hover {
+    background-color: rgba(0, 123, 255, 1);
+    transform: scale(1.1);
   }
 
   .day-left-btn {
@@ -364,14 +219,12 @@
     left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    position: absolute;
   }
 
   .exercise-right-btn {
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    position: absolute;
   }
 
   /* Dots điều hướng */
@@ -408,7 +261,7 @@
     text-align: center;
     z-index: 1;
     position: relative;
-    overflow: visible; /* Đảm bảo nút không bị che */
+    overflow: visible;
   }
 
   .carousel-title {
@@ -491,4 +344,171 @@
     background-color: #007bff;
   }
 </style>
+
+<script>
+  // Define all variables and functions at the top level
+  let currentDayIndex = 0;
+  let currentExerciseIndex = 0;
+  let workoutDays = {{ workout_data.DT.WorkoutDays|safe }};
+  let titleElement = document.getElementById('workout-title');
+  let exerciseListElement = document.getElementById('exercise-list');
+  let exerciseCards = document.getElementById('exercise-cards');
+  let exercisePageInfo = document.getElementById('exercise-page-info');
+
+  // Hàm tải video về khi nhấp vào
+  function downloadVideo(videoId) {
+    const videoElement = document.getElementById(videoId);
+    const videoUrl = videoElement.querySelector('source').src;
+    const link = document.createElement('a');
+    link.href = videoUrl;
+    link.download = `${videoId}.mp4`; // Tên file tải về
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Function to navigate to workout details
+  function showWorkoutDetails() {
+    window.location.href = "{% url 'workout_start' %}?day=Day " + (currentDayIndex + 1);
+  }
+
+  // Set active day directly
+  function setActiveDay(index) {
+    currentDayIndex = index;
+    updateWorkout();
+    updateActiveDot();
+  }
+
+  // Set active exercise page directly
+  function setActiveExercise(index) {
+    currentExerciseIndex = index;
+    updateExerciseCarousel();
+  }
+
+  // Define the workout navigation functions
+  function prevWorkout() {
+    console.log("prevWorkout called");
+    if (currentDayIndex > 0) {
+      currentDayIndex--;
+      updateWorkout();
+      updateActiveDot();
+    }
+  }
+
+  function nextWorkout() {
+    console.log("nextWorkout called");
+    if (currentDayIndex < workoutDays.length - 1) {
+      currentDayIndex++;
+      updateWorkout();
+      updateActiveDot();
+    }
+  }
+
+  function updateActiveDot() {
+    const dayDots = document.querySelectorAll('.dot');
+    dayDots.forEach((dot, i) => {
+      if (i === currentDayIndex) {
+        dot.classList.add('active');
+      } else {
+        dot.classList.remove('active');
+      }
+    });
+  }
+
+  function prevExercise() {
+    console.log("prevExercise called");
+    if (currentExerciseIndex > 0) {
+      currentExerciseIndex--;
+      updateExerciseCarousel();
+    }
+  }
+
+  function nextExercise() {
+    console.log("nextExercise called");
+    const currentDay = workoutDays[currentDayIndex];
+    const maxPage = Math.ceil(currentDay.WorkoutExercises.length / 3) - 1;
+    if (currentExerciseIndex < maxPage) {
+      currentExerciseIndex++;
+      updateExerciseCarousel();
+    }
+  }
+
+  function updateWorkout() {
+    console.log("Updating workout to day:", currentDayIndex + 1);
+    const currentDay = workoutDays[currentDayIndex];
+    titleElement.textContent = `Day ${currentDayIndex + 1} Workout Plan`;
+    exerciseListElement.innerHTML = currentDay.WorkoutExercises.map(exercise =>
+      `<li>${exercise.Exercise.name}</li>`
+    ).join('');
+    document.querySelector('.workout-info span:first-child').textContent = `💪 ${currentDay.WorkoutExercises.length} Exercises`;
+    document.querySelector('.workout-info span:last-child').textContent = `⏱ About ${currentDay.duration} mins`;
+    document.querySelector('.carousel-title').textContent = `${currentDay.WorkoutExercises.length} EXERCISES IN THIS WORKOUT`;
+
+    // Reset exercise index when changing days
+    currentExerciseIndex = 0;
+    updateExerciseCarousel();
+  }
+
+  function updateExerciseCarousel() {
+    console.log("Updating exercise carousel, index:", currentExerciseIndex);
+    const currentDay = workoutDays[currentDayIndex];
+    const exercises = currentDay.WorkoutExercises;
+    const start = currentExerciseIndex * 3;
+    const end = Math.min(start + 3, exercises.length);
+
+    exerciseCards.innerHTML = '';
+
+    for (let i = start; i < end; i++) {
+      const exercise = exercises[i];
+      const card = document.createElement('div');
+      card.className = 'exercise-card';
+      card.dataset.videoUrl = exercise.Exercise.video_male[0];
+
+      card.innerHTML = `
+          <video controls class="exercise-video" id="exercise-video-${i}">
+              <source src="${exercise.Exercise.video_male[0]}" type="video/mp4">
+              Your browser does not support the video tag.
+          </video>
+          <h4>${exercise.Exercise.name}</h4>
+          <p>${exercise.reps} | ${exercise.Exercise.GroupMuscle.name} | ${exercise.Exercise.Difficulty.name}</p>
+      `;
+
+      exerciseCards.appendChild(card);
+    }
+
+    exercisePageInfo.textContent = `Showing ${start + 1} to ${end} of ${exercises.length}`;
+
+    // Update pagination dots
+    const dotsContainer = document.querySelector('.pagination-dots-exercise');
+    dotsContainer.innerHTML = '';
+
+    const pageCount = Math.ceil(exercises.length / 3);
+    for (let i = 0; i < pageCount; i++) {
+      const dot = document.createElement('span');
+      dot.className = `dot-exercise ${i === currentExerciseIndex ? 'active' : ''}`;
+      dot.dataset.index = i;
+      dot.addEventListener('click', function() {
+        currentExerciseIndex = parseInt(this.dataset.index);
+        updateExerciseCarousel();
+      });
+      dotsContainer.appendChild(dot);
+    }
+  }
+
+  // Initialize everything when DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded");
+    // Re-initialize references after DOM is loaded
+    titleElement = document.getElementById('workout-title');
+    exerciseListElement = document.getElementById('exercise-list');
+    exerciseCards = document.getElementById('exercise-cards');
+    exercisePageInfo = document.getElementById('exercise-page-info');
+    
+    // Initialize the workout display
+    updateWorkout();
+    
+    // Log the status of items
+    console.log("Initialization complete");
+  });
+</script>
 {% endblock %}

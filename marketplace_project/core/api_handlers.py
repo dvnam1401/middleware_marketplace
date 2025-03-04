@@ -16,7 +16,7 @@ class APIHandler:
 
 # Initialize handlers for each server
 server1_handler = APIHandler(config('SERVER1_API_URL'), config('SERVER1_API_TOKEN'))
-server2_handler = APIHandler(config('SERVER2_API_URL'), config('SERVER2_API_TOKEN'))
+server2_handler = APIHandler(config('API_WORKOUT_URL'), config('WORKOUT_TOKEN'))
 
 def get_all_products():
     products1 = server1_handler.get_data('get_product/')
