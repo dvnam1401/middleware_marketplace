@@ -1,42 +1,494 @@
 {% extends 'base.html' %}
 {% block content %}
-    <div class="workout-details">
-        <h2>{{ workout_data.DT.training_split }} / {{ workout_data.DT.training_split_vi }}</h2>
-        <div class="day-buttons">
-            {% for day in workout_data.DT.WorkoutDays %}
-                <button onclick="showDayWorkout('{{ day.day_of_week }}')">{{ day.day_of_week }} / {{ day.day_of_week_vi }}</button>
-            {% endfor %}
-        </div>
-        <div id="workout-day-content">
-            <!-- Nội dung ngày tập sẽ được cập nhật bằng JavaScript -->
-        </div>
-        <button id="start-workout" onclick="startWorkout()">Start Workout</button>
+<div class="workout-container">
+  <!-- Background Image with Day Navigation -->
+  <div class="background-image">
+    <img
+      src="https://th.bing.com/th/id/OIP.NZAQ_AZjXcUI4nFRQoE3DwHaE8?rs=1&pid=ImgDetMain"
+      alt="Workout Background"
+      class="bg-image"
+    />
+    <!-- Navigation Arrows for Days -->
+    <button class="carousel-btn day-left-btn" id="day-left-btn">◀</button>
+    <button class="carousel-btn day-right-btn" id="day-right-btn">▶</button>
+    <!-- Workout Plan Card -->
+    <div class="workout-plan-card">
+      <h3 id="workout-title">Day 1 Workout Plan</h3>
+      <div class="workout-info">
+        <span>💪 {{ workout_data.DT.WorkoutDays.0.WorkoutExercises|length }} Exercises</span>
+        <span>⏱ About {{ workout_data.DT.WorkoutDays.0.duration }} mins</span>
+      </div>
+      <ul id="exercise-list">
+        {% for exercise in workout_data.DT.WorkoutDays.0.WorkoutExercises %}
+          <li>{{ exercise.Exercise.name }}</li>
+        {% endfor %}
+      </ul>
+      <button class="start-button" onclick="showWorkoutDetails()">
+        START WORKOUT
+      </button>
     </div>
+    <!-- Pagination Dots -->
+    <div class="pagination-dots">
+      {% for day in workout_data.DT.WorkoutDays %}
+        <span class="dot {% if forloop.counter0 == 0 %}active{% endif %}" data-index="{{ forloop.counter0 }}"></span>
+      {% endfor %}
+    </div>
+  </div>
 
-    <script>
-        let currentDay = null;
+  <!-- New Exercise Carousel Section -->
+  <div class="exercise-carousel">
+    <h3 class="carousel-title">
+      {{ workout_data.DT.WorkoutDays.0.WorkoutExercises|length }} EXERCISES IN
+      THIS WORKOUT
+    </h3>
+    <p class="carousel-info" id="exercise-page-info">
+      Showing 1 to 3 of {{ workout_data.DT.WorkoutDays.0.WorkoutExercises|length }}
+    </p>
+    <div class="exercise-cards" id="exercise-cards">
+      {% for exercise in workout_data.DT.WorkoutDays.0.WorkoutExercises|slice:":3" %}
+      <div
+        class="exercise-card"
+        data-video-url="{{ exercise.Exercise.video_male.0|escapejs }}"
+      >
+        <video
+          controls
+          class="exercise-video"
+          id="exercise-video-{{ forloop.counter0 }}"
+        >
+          <source src="{{ exercise.Exercise.video_male.0 }}" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <h4>{{ exercise.Exercise.name }}</h4>
+        <p>
+          {{ exercise.reps }} | {{ exercise.Exercise.GroupMuscle.name }} | {{
+          exercise.Exercise.Difficulty.name }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+    <!-- Navigation Arrows for Exercises -->
+    <button class="carousel-btn exercise-left-btn" id="exercise-left-btn">
+      ◀
+    </button>
+    <button class="carousel-btn exercise-right-btn" id="exercise-right-btn">
+      ▶
+    </button>
+    <div class="pagination-dots-exercise">
+      {% for i in workout_data.DT.WorkoutDays.0.WorkoutExercises|slice:":3" %}
+      <span
+        class="dot-exercise {% if forloop.first %}active{% endif %}"
+        data-index="{{ forloop.counter0 }}"
+      ></span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
 
-        function showDayWorkout(day) {
-            currentDay = day;
-            const dayData = {{ workout_data.DT.WorkoutDays|safe }};
-            const selectedDay = dayData.find(d => d.day_of_week === day);
-            if (selectedDay) {
-                let content = `<h3>${selectedDay.day_of_week} / ${selectedDay.day_of_week_vi}</h3>`;
-                content += '<ul>';
-                selectedDay.WorkoutExercises.forEach(exercise => {
-                    content += `<li>${exercise.Exercise.name} / ${exercise.Exercise.name_vi} - ${exercise.sets} sets, ${exercise.reps}, ${exercise.rest} sec rest</li>`;
-                });
-                content += '</ul>';
-                document.getElementById('workout-day-content').innerHTML = content;
-            }
-        }
+<script>
+  // Hàm tải video về khi nhấp vào
+  function downloadVideo(videoId) {
+      const videoElement = document.getElementById(videoId);
+      const videoUrl = videoElement.querySelector('source').src;
+      const link = document.createElement('a');
+      link.href = videoUrl;
+      link.download = `${videoId}.mp4`; // Tên file tải về
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  }
 
-        function startWorkout() {
-            if (currentDay) {
-                window.location.href = "{% url 'workout_start' %}?day=" + currentDay;
-            } else {
-                alert('Please select a day first!');
-            }
-        }
-    </script>
+  // Carousel for days
+  let currentDayIndex = 0; // Bắt đầu với Day 1 (index 0)
+  const workoutDays = {{ workout_data.DT.WorkoutDays|safe }};
+  const titleElement = document.getElementById('workout-title');
+  const exerciseListElement = document.getElementById('exercise-list');
+  const dayDots = document.querySelectorAll('.dot');
+
+  function updateWorkout() {
+      const currentDay = workoutDays[currentDayIndex];
+      titleElement.textContent = `Day ${currentDayIndex + 1} Workout Plan`;
+      exerciseListElement.innerHTML = currentDay.WorkoutExercises.map(exercise =>
+          `<li>${exercise.Exercise.name}</li>`
+      ).join('');
+      document.querySelector('.workout-info span:first-child').textContent = `💪 ${currentDay.WorkoutExercises.length} Exercises`;
+      document.querySelector('.workout-info span:last-child').textContent = `⏱ About ${currentDay.duration} mins`;
+      document.querySelector('.carousel-title').textContent = `${currentDay.WorkoutExercises.length} EXERCISES IN THIS WORKOUT`;
+      updateExerciseCarousel();
+  }
+
+  function prevWorkout() {
+      if (currentDayIndex > 0) {
+          currentDayIndex--;
+          updateWorkout();
+          updateActiveDot();
+      }
+  }
+
+  function nextWorkout() {
+      if (currentDayIndex < workoutDays.length - 1) {
+          currentDayIndex++;
+          updateWorkout();
+          updateActiveDot();
+      }
+  }
+
+  function updateActiveDot() {
+      dayDots.forEach((dot, i) => {
+          if (i === currentDayIndex) {
+              dot.classList.add('active');
+          } else {
+              dot.classList.remove('active');
+          }
+      });
+  }
+
+  // Add click event for day dots
+  dayDots.forEach(dot => {
+      dot.addEventListener('click', function() {
+          currentDayIndex = parseInt(this.getAttribute('data-index'));
+          updateWorkout();
+          updateActiveDot();
+      });
+  });
+
+  // Carousel for exercises
+  let currentExerciseIndex = 0;
+  let exerciseCards = document.getElementById('exercise-cards');
+  let exercisePageInfo = document.getElementById('exercise-page-info');
+  const exerciseLeftBtn = document.getElementById('exercise-left-btn');
+  const exerciseRightBtn = document.getElementById('exercise-right-btn');
+
+  function updateExerciseCarousel() {
+      const currentDay = workoutDays[currentDayIndex];
+      const exercises = currentDay.WorkoutExercises;
+      const start = currentExerciseIndex * 3;
+      const end = Math.min(start + 3, exercises.length);
+      
+      exerciseCards.innerHTML = '';
+      
+      for (let i = start; i < end; i++) {
+          const exercise = exercises[i];
+          const card = document.createElement('div');
+          card.className = 'exercise-card';
+          card.dataset.videoUrl = exercise.Exercise.video_male[0];
+          
+          card.innerHTML = `
+              <video controls class="exercise-video" id="exercise-video-${i}">
+                  <source src="${exercise.Exercise.video_male[0]}" type="video/mp4">
+                  Your browser does not support the video tag.
+              </video>
+              <h4>${exercise.Exercise.name}</h4>
+              <p>${exercise.reps} | ${exercise.Exercise.GroupMuscle.name} | ${exercise.Exercise.Difficulty.name}</p>
+          `;
+          
+          exerciseCards.appendChild(card);
+      }
+      
+      exercisePageInfo.textContent = `Showing ${start + 1} to ${end} of ${exercises.length}`;
+      
+      // Update pagination dots
+      const dotsContainer = document.querySelector('.pagination-dots-exercise');
+      dotsContainer.innerHTML = '';
+      
+      const pageCount = Math.ceil(exercises.length / 3);
+      for (let i = 0; i < pageCount; i++) {
+          const dot = document.createElement('span');
+          dot.className = `dot-exercise ${i === currentExerciseIndex ? 'active' : ''}`;
+          dot.dataset.index = i;
+          dot.addEventListener('click', function() {
+              currentExerciseIndex = parseInt(this.dataset.index);
+              updateExerciseCarousel();
+          });
+          dotsContainer.appendChild(dot);
+      }
+  }
+
+  function prevExercise() {
+      if (currentExerciseIndex > 0) {
+          currentExerciseIndex--;
+          updateExerciseCarousel();
+      }
+  }
+
+  function nextExercise() {
+      const currentDay = workoutDays[currentDayIndex];
+      const maxPage = Math.ceil(currentDay.WorkoutExercises.length / 3) - 1;
+      if (currentExerciseIndex < maxPage) {
+          currentExerciseIndex++;
+          updateExerciseCarousel();
+      }
+  }
+
+  // Gắn sự kiện ban đầu cho các nút
+  document.addEventListener('DOMContentLoaded', function() {
+      const dayLeftBtn = document.getElementById('day-left-btn');
+      const dayRightBtn = document.getElementById('day-right-btn');
+      
+      if (dayLeftBtn) dayLeftBtn.onclick = prevWorkout;
+      if (dayRightBtn) dayRightBtn.onclick = nextWorkout;
+      if (exerciseLeftBtn) exerciseLeftBtn.onclick = prevExercise;
+      if (exerciseRightBtn) exerciseRightBtn.onclick = nextExercise;
+  });
+
+  // Initial load
+  updateWorkout();
+  updateExerciseCarousel();
+
+  // Function to navigate to workout details
+  function showWorkoutDetails() {
+    // Change this line to use the day format your view expects
+    window.location.href = "{% url 'workout_start' %}?day=Day " + (currentDayIndex + 1);
+}
+</script>
+
+<style>
+  /* Reset mọi giá trị mặc định */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+  }
+
+  /* Cấu trúc container chính */
+  .workout-container {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Background image */
+  .background-image {
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    z-index: 0;
+    margin-bottom: 20px;
+  }
+
+  .background-image img.bg-image {
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+    display: block;
+    min-height: 400px;
+    object-fit: cover;
+  }
+
+  /* Card cho kế hoạch bài tập */
+  .workout-plan-card {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    width: 80%;
+    max-width: 600px;
+    z-index: 1;
+  }
+
+  .workout-plan-card h3 {
+    font-size: 24px;
+    color: #003366;
+  }
+
+  .workout-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+  }
+
+  .workout-info span {
+    font-size: 14px;
+  }
+
+  .workout-plan-card ul {
+    list-style-type: none;
+    padding: 0;
+  }
+
+  .workout-plan-card ul li {
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+
+  .start-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .start-button:hover {
+    background-color: #0056b3;
+  }
+
+  /* Điều hướng qua ngày */
+  .carousel-btn {
+    position: absolute;
+    background-color: rgba(0, 123, 255, 0.8);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 2;
+    pointer-events: auto; /* Đảm bảo nút có thể nhấp */
+  }
+
+  .day-left-btn {
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .day-right-btn {
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  /* Điều hướng qua bài tập */
+  .exercise-left-btn {
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+  }
+
+  .exercise-right-btn {
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+  }
+
+  /* Dots điều hướng */
+  .pagination-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    z-index: 2;
+  }
+
+  .pagination-dots .dot {
+    width: 10px;
+    height: 10px;
+    background-color: #bbb;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .pagination-dots .dot.active {
+    background-color: #007bff;
+  }
+
+  /* Carousel cho bài tập */
+  .exercise-carousel {
+    width: 100%;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    z-index: 1;
+    position: relative;
+    overflow: visible; /* Đảm bảo nút không bị che */
+  }
+
+  .carousel-title {
+    color: #007bff;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .carousel-info {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .exercise-cards {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .exercise-card {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    position: relative;
+  }
+
+  .exercise-video {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+
+  .exercise-card h4 {
+    font-size: 16px;
+    color: #333;
+    margin: 10px 0 5px;
+  }
+
+  .exercise-card p {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .download-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+
+  .download-button:hover {
+    background-color: #0056b3;
+  }
+
+  /* Pagination dots cho bài tập */
+  .pagination-dots-exercise {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+  }
+
+  .dot-exercise {
+    width: 10px;
+    height: 10px;
+    background-color: #bbb;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .dot-exercise.active {
+    background-color: #007bff;
+  }
+</style>
 {% endblock %}

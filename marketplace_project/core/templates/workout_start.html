@@ -1,24 +1,218 @@
-{% extends 'base.html' %}
-{% block content %}
-    <div class="workout-start">
-        <h2>{{ day.day_of_week }} / {{ day.day_of_week_vi }}</h2>
-        <div class="exercise-list">
-            {% for exercise in day.WorkoutExercises %}
-                <div class="exercise-item">
-                    <h3>{{ exercise.Exercise.name }} / {{ exercise.Exercise.name_vi }}</h3>
-                    <p>Sets: {{ exercise.sets|default:"N/A" }}, Reps: {{ exercise.reps|default:"N/A" }}, Rest: {{ exercise.rest|default:"N/A" }} sec</p>
-                    <p>Notes: {{ exercise.notes }} / {{ exercise.notes_vi }}</p>
-                    <p>Steps: {{ exercise.Exercise.step|linebreaks }} / {{ exercise.Exercise.step_vi|linebreaks }}</p>
-                    <img src="{{ exercise.Exercise.video_male.0|default:'https://via.placeholder.com/300' }}" alt="Exercise Video" class="exercise-video">
-                </div>
-            {% endfor %}
-        </div>
-        <button onclick="goBack()">Back</button>
-    </div>
+{% extends 'base.html' %} {% block content %}
+<div class="workout-start">
+  <h2>{{ day.day_of_week }}</h2>
+  <div class="exercise-list">
+    {% for exercise in day.WorkoutExercises %}
+    <div class="exercise-item">
+      <h3>{{ exercise.Exercise.name }}</h3>
+      <p>
+        Sets: {{ exercise.sets|default:"N/A" }}, Reps: {{
+        exercise.reps|default:"N/A" }}, Rest: {{ exercise.rest|default:"N/A" }}
+        sec
+      </p>
+      <p>Notes: {{ exercise.notes }}</p>
+      <p>Steps: {{ exercise.Exercise.step|linebreaks }}</p>
 
-    <script>
-        function goBack() {
-            window.location.href = "{% url 'workout_details' %}";
-        }
-    </script>
+      <!-- Exercise Videos -->
+      <div class="exercise-videos">
+        <h4>Exercise Videos</h4>
+        <div class="video-grid" id="video-grid-{{ forloop.counter0 }}">
+          <!-- Videos will be organized by JavaScript -->
+          <!-- Male Videos -->
+          {% if exercise.Exercise.video_male %}
+            {% for video_url in exercise.Exercise.video_male %}
+            <div
+              class="video-container"
+              data-type="male"
+              data-url="{{ video_url }}"
+            >
+              <h5>Male Version</h5>
+              <video
+                controls
+                class="exercise-video"
+                id="exercise-video-male-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}"
+              >
+                <source src="{{ video_url }}" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>              
+            </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Female Videos -->
+          {% if exercise.Exercise.video_female %}
+            {% for video_url in exercise.Exercise.video_female %}
+            <div
+              class="video-container"
+              data-type="female"
+              data-url="{{ video_url }}"
+            >
+              <h5>Female Version</h5>
+              <video
+                controls
+                class="exercise-video"
+                id="exercise-video-female-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}"
+              >
+                <source src="{{ video_url }}" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <button class="back-button" onclick="goBack()">Back</button>
+</div>
+
+<script>
+  function goBack() {
+    window.location.href = "{% url 'workout_details' %}";
+  }
+
+  // Function to organize videos into two equal rows
+  document.addEventListener("DOMContentLoaded", function () {
+    const videoGrids = document.querySelectorAll(".video-grid");
+
+    videoGrids.forEach((grid) => {
+      const containers = Array.from(grid.querySelectorAll(".video-container"));
+      const totalVideos = containers.length;
+
+      // If we have more than 1 video, organize them
+      if (totalVideos > 1) {
+        // Clear the grid
+        grid.innerHTML = "";
+
+        // Create two rows
+        const row1 = document.createElement("div");
+        row1.className = "video-row";
+        const row2 = document.createElement("div");
+        row2.className = "video-row";
+
+        // Calculate videos per row (evenly distributed)
+        const videosInFirstRow = Math.ceil(totalVideos / 2);
+
+        // Add containers to their respective rows
+        containers.forEach((container, index) => {
+          if (index < videosInFirstRow) {
+            row1.appendChild(container);
+          } else {
+            row2.appendChild(container);
+          }
+        });
+
+        // Add rows to grid
+        grid.appendChild(row1);
+        grid.appendChild(row2);
+      }
+    });
+  });
+</script>
+
+<style>
+  .workout-start {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .exercise-item {
+    margin-bottom: 40px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 20px;
+  }
+
+  /* Video Grid with Rows styling */
+  .video-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .video-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+  }
+
+  .video-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-width: 450px;
+  }
+
+  .video-container h5 {
+    margin: 0 0 10px 0;
+    color: #007bff;
+  }
+
+  .exercise-video {
+    width: 100%;
+    max-height: 300px;
+    border-radius: 5px;
+  }
+
+  .download-button {
+    margin-top: 10px;
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .download-button:hover {
+    background-color: #0056b3;
+  }
+
+  .back-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .back-button:hover {
+    background-color: #0056b3;
+  }
+
+  /* Headers and text styling */
+  h2 {
+    color: #003366;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    color: #007bff;
+    margin-bottom: 10px;
+  }
+
+  h4 {
+    color: #333;
+    margin: 15px 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+  }
+
+  p {
+    line-height: 1.6;
+    color: #555;
+  }
+</style>
 {% endblock %}

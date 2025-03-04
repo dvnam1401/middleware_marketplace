@@ -1,30 +1,146 @@
 {% extends 'base.html' %}
 {% block content %}
-    <h2>Plan Your Workout</h2>
-    <div class="workout-container">
+    <!-- Tiêu đề chính -->
+    <h2 class="workout-title">Plan Your Workout</h2>
+
+    <!-- Container chính -->
+    <div class="workout-container-1">
         {% if workout_data and workout_data.EC == 0 %}
-            <div class="workout-card">
-                <img src="https://example.com/workout-image.jpg" alt="Workout Image" class="workout-image" onclick="showWorkoutDetails()">
+            <!-- Thẻ bài workout với sự kiện onclick -->
+            <div class="workout-card" onclick="showWorkoutDetails()">
+                <!-- Container cho hình ảnh và overlay -->
+                <div class="workout-image-container">
+                    <img src="https://th.bing.com/th/id/OIP.NZAQ_AZjXcUI4nFRQoE3DwHaE8?rs=1&pid=ImgDetMain" 
+                         alt="Workout Image" 
+                         class="workout-image">
+                    <span class="level">{{ workout_data.DT.training_level }}</span>
+                    <h3 class="workout-title-overlay">{{ workout_data.DT.training_split }}</h3>
+                </div>
+                <!-- Thông tin workout -->
                 <div class="workout-info">
-                    <span class="level">{{ workout_data.DT.training_level }} / {{ workout_data.DT.training_level_vi }}</span>
-                    <h3>{{ workout_data.DT.training_split }} / {{ workout_data.DT.training_split_vi }}</h3>
-                    <p>{{ workout_data.DT.goal }} / {{ workout_data.DT.goal_vi }}</p>
-                    <ul>
+                    <p class="workout-description">{{ workout_data.DT.goal }}</p>
+                    <ul class="considerations-list">
                         {% for consideration in workout_data.DT.ImportantConsiderations %}
-                            <li>{{ consideration.description }} / {{ consideration.description_vi }}</li>
+                            <li>{{ consideration.description }}</li>
                         {% endfor %}
                     </ul>
                 </div>
             </div>
-            <div id="chat-bubble" class="chat-bubble">Chat with us!</div>
         {% else %}
-            <p>Failed to load workout plan. Please try again.</p>
+            <!-- Thông báo lỗi -->
+            <p class="error-message">Failed to load workout plan. Please try again.</p>
         {% endif %}
     </div>
 
+    <!-- Truyền dữ liệu JSON -->
+    {{ workout_data|json_script:"workout-data" }}
+
+    <!-- Script xử lý gửi dữ liệu -->
     <script>
         function showWorkoutDetails() {
-            window.location.href = "{% url 'workout_details' %}"; // Chuyển đến trang chi tiết
+            fetch('/save-workout-data/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ workout_data: JSON.parse(document.getElementById('workout-data').textContent) })
+            }).then(response => {
+                if (response.ok) {
+                    window.location.href = "{% url 'workout_details' %}";
+                } else {
+                    console.error('Error:', response.statusText);
+                }
+            }).catch(error => {
+                console.error('Fetch error:', error);
+            });
         }
     </script>
+
+    <!-- CSS nhúng để giữ kiểu dáng -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .workout-container-1 {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .workout-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            cursor: pointer; /* Thêm con trỏ tay để chỉ ra tính tương tác */
+        }
+        .workout-image-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        .workout-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        .level {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 2;
+        }
+        .workout-title-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+        .workout-info {
+            padding: 30px;
+        }
+        .workout-description {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 25px;
+        }
+        .considerations-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .considerations-list li {
+            color: #666;
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .considerations-list li:before {
+            content: "•";
+            color: #ff6b6b;
+            font-size: 20px;
+            position: absolute;
+            left: 0;
+        }
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+        }
+        .workout-title {
+            text-align: center;
+            color: #333;
+        }
+    </style>
 {% endblock %}
