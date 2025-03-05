@@ -6,12 +6,20 @@
             <div class="product-header">
                 <h1>{{ product.name }}</h1>
                 <div class="rating">
-                    ⭐ {{ product.rating|default:"0" }} / 5 | {{ product.views|default:"1,3K sold" }} | <span class="store">Shopee</span>
+                    {% if product.rating or product.views %}
+                        ⭐ {{ product.rating|default:"0" }} / 5 | {{ product.views|default:"1,3K sold" }} | 
+                    {% else %}
+                        <!-- Dành cho sách: không có rating/views thì bỏ qua -->
+                        <span>Sách mới</span> | 
+                    {% endif %}
+                    <span class="store">{% if product.category == 'book' %}Bookstore{% else %}Shopee{% endif %}</span>
                 </div>
-                <div class="flash-sale">FLASH SALE</div>
+                {% if product.discount %}
+                    <div class="flash-sale">FLASH SALE</div>
+                {% endif %}
             </div>
 
-            <!-- Hình ảnh sản phẩm (chỉ lấy ảnh đầu tiên) -->
+            <!-- Hình ảnh sản phẩm -->
             <div class="product-image">
                 <img src="{{ product.images.0 }}" alt="{{ product.name }}" style="max-width: 100%;">
             </div>
@@ -23,10 +31,10 @@
                     <span class="discount">(-{{ product.discount|default:"41" }}%)</span>
                 {% endif %}
                 <span class="final-price">đ{{ product.price }} VNĐ</span>
+                {% if product.quantity %}
+                    <span class="quantity-available"> (Còn: {{ product.quantity }})</span>
+                {% endif %}
             </div>
-
-            <!-- Thông tin chi tiết -->
-            <div class="product-info">              
 
             <!-- Mô tả sản phẩm -->
             <div class="product-description">
@@ -40,7 +48,7 @@
                 <button class="buy-now">Mua Ngay</button>
             </div>
 
-            <!-- Số lượng và đánh giá -->
+            <!-- Số lượng -->
             <div class="quantity-section">
                 <span>Số Lượng: </span>
                 <button id="decrease">-</button>
@@ -48,7 +56,7 @@
                 <button id="increase">+</button>
             </div>
 
-            <!-- Thông báo (ẩn ban đầu) -->
+            <!-- Thông báo -->
             <div id="order-message" style="display: none; color: green; margin-top: 10px;"></div>
 
             <!-- Chia sẻ và thích -->

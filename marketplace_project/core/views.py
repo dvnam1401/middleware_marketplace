@@ -1,22 +1,104 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from .api_handlers import get_all_products, server1_handler, server2_handler
+from .api_handlers import get_all_products, get_all_books  
 from decouple import config
 from django.views.decorators.csrf import csrf_exempt
 import requests
 def home(request):
-    products = get_all_products()
-    return render(request, 'home.html', {'products': products})
+    products = get_all_products() or []  # Nếu không có products, trả về danh sách rỗng
+    books = get_all_books() or []  # Nếu không có books, trả về danh sách rỗng
+    return render(request, 'home.html', {'products': products, 'books': books})
+
+# def product_detail(request, product_id):
+#     products = get_all_products()
+#     product = next((p for p in products if str(p.get('product_id')) == str(product_id)), None)
+#     if product:
+#         # Thay thế __NEWLINE__ bằng <br> để hiển thị xuống dòng
+#         product['description'] = product['description'].replace('__NEWLINE__', '<br>')
+#     api_orders_url = config('API_ORDERS_URL')
+#     access_token = config('SERVER1_API_TOKEN')
+#     return render(request, 'product_detail.html', {'product': product, 'api_orders_url': api_orders_url, 'access_token': access_token})
+from django.views.decorators.http import require_POST
+@csrf_exempt
+@require_POST
+def order_book(request):
+    try:
+        # Đọc dữ liệu từ request body
+        body = request.body.decode('utf-8')
+        if not body:
+            return JsonResponse({'status': 'error', 'message': 'No data received'}, status=400)
+        
+        data = json.loads(body)
+        book_id = data.get('id')  # Lấy từ client (bookId trong JS)
+        quantity = data.get('quantity')  # Lấy từ client
+
+        if not book_id or not quantity:
+            return JsonResponse({'status': 'error', 'message': 'Missing id or quantity'}, status=400)
+
+        # Gọi API đặt hàng sách với định dạng yêu cầu
+        api_book_orders_url = config('API_BOOK_ORDERS_URL')
+        books_api_token = config('BOOKS_API_TOKEN')
+        headers = {
+            'Authorization': f'Bearer {books_api_token}',
+            'Content-Type': 'application/json'
+        }
+        payload = {
+            'productid': int(book_id),  # Đổi tên thành 'productid' theo API yêu cầu
+            'number_of_items': int(quantity)  # Đổi tên thành 'number_of_items'
+        }
+
+        response = requests.post(api_book_orders_url, json=payload, headers=headers)
+        response.raise_for_status()  # Nếu có lỗi HTTP, sẽ raise exception
+
+        # Nếu server trả về thành công (status 200), trả về thông báo
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Mua hàng thành công',  # Thông báo cụ thể
+            'data': response.json()  # Trả về dữ liệu từ API nếu có
+        })
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Failed to order book: {str(e)}'
+        }, status=500)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def product_detail(request, product_id):
     products = get_all_products()
     product = next((p for p in products if str(p.get('product_id')) == str(product_id)), None)
+    
     if product:
-        # Thay thế __NEWLINE__ bằng <br> để hiển thị xuống dòng
         product['description'] = product['description'].replace('__NEWLINE__', '<br>')
-    api_orders_url = config('API_ORDERS_URL')
-    access_token = config('SERVER1_API_TOKEN')
-    return render(request, 'product_detail.html', {'product': product, 'api_orders_url': api_orders_url, 'access_token': access_token})
+        api_orders_url = config('API_ORDERS_URL')
+        access_token = config('SERVER1_API_TOKEN')
+        return render(request, 'product_detail.html', {
+            'product': product,
+            'api_orders_url': api_orders_url,
+            'access_token': access_token
+        })
+    
+    return render(request, 'product_detail.html', {'product': None})
+
+def book_detail(request, product_id):
+    print(product_id)
+    books = get_all_books()
+    book = next((b for b in books if str(b.get('product_id')) == str(product_id)), None)
+    
+    if book:
+        book['description'] = book['description'].replace('__NEWLINE__', '<br>')
+        api_orders_url = config('API_ORDERS_URL')
+        access_token = config('BOOKS_API_TOKEN')
+        return render(request, 'book_detail.html', {
+            'book': book,
+            'api_orders_url': api_orders_url,
+            'access_token': access_token
+        })
+    
+    return render(request, 'book_detail.html', {'book': None})
 
 # View để hiển thị form nhập liệu
 def workout_form(request):

@@ -1,0 +1,119 @@
+{% extends 'base.html' %} {% block content %}
+<div class="book-detail">
+  {% if book %}
+  <!-- Tiêu đề sách -->
+  <div class="book-header">
+    <h1>{{ book.name }}</h1>
+    <div class="book-info">
+      <span class="category">Thể loại: {{ book.category|title }}</span> |
+      <span class="quantity">Còn lại: {{ book.quantity }}</span>
+    </div>
+  </div>
+
+  <!-- Hình ảnh sách -->
+  <div class="book-image">
+    <img
+      src="https://png.pngtree.com/background/20211216/original/pngtree-photographs-of-books-stacked-on-the-grass-in-the-morning-of-picture-image_1519358.jpg"
+      alt="{{ book.name }}"
+      style="max-width: 100%"
+    />
+  </div>
+
+  <!-- Giá sách -->
+  <div class="price-section">
+    <span class="final-price">đ{{ book.price }}K VNĐ</span>
+  </div>
+
+  <!-- Mô tả sách -->
+  <div class="book-description">
+    <h3>Giới thiệu sách</h3>
+    <p>{{ book.description|safe }}</p>
+  </div>
+
+  <!-- Nút mua hàng -->
+  <div class="buy-section">
+    <button class="add-to-cart">Thêm Vào Giỏ Hàng</button>
+    <button class="buy-now" onclick="orderBook()">Mua Ngay</button>
+  </div>
+
+  <!-- Số lượng -->
+  <div class="quantity-section">
+    <span>Số Lượng: </span>
+    <button id="decrease" onclick="updateQuantity(-1)">-</button>
+    <span id="quantity">1</span>
+    <button id="increase" onclick="updateQuantity(1)">+</button>
+  </div>
+
+  <!-- Thông báo -->
+  <div
+    id="order-message"
+    style="display: none; color: green; margin-top: 10px"
+  ></div>
+
+  <!-- Chia sẻ -->
+  <div class="social-section">
+    <span>Chia sẻ: </span>
+    <i class="fab fa-facebook-f"></i>
+    <i class="fab fa-pinterest-p"></i>
+    <i class="fab fa-twitter"></i>
+  </div>
+  {% else %}
+  <p>Sách không tồn tại.</p>
+  {% endif %}
+</div>
+
+<!-- Truyền biến từ Django sang JavaScript -->
+<script>
+  var apiBookOrdersUrl = "{{ api_orders_url }}";
+  var accessToken = "{{ access_token }}";
+  var bookId = "{{ book.product_id|default:'0' }}";
+
+  function updateQuantity(change) {
+    let quantityElement = document.getElementById("quantity");
+    let currentQuantity = parseInt(quantityElement.textContent);
+    let newQuantity = currentQuantity + change;
+    if (newQuantity >= 1) {
+      quantityElement.textContent = newQuantity;
+    }
+  }
+
+  function orderBook() {
+    let quantity = parseInt(document.getElementById("quantity").textContent);
+    let messageElement = document.getElementById("order-message");
+
+    fetch("{% url 'order_book' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": "{{ csrf_token }}",
+      },
+      body: JSON.stringify({
+        id: bookId, // Gửi bookId từ template
+        quantity: quantity, // Gửi số lượng từ giao diện
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        messageElement.style.display = "block";
+        if (data.status === "success") {
+          messageElement.style.color = "green";
+          messageElement.textContent = "Mua hàng thành công"; // Thông báo cố định
+        } else {
+          messageElement.style.color = "red";
+          messageElement.textContent =
+            data.message || "Có lỗi xảy ra khi mua hàng";
+        }
+      })
+      .catch((error) => {
+        messageElement.style.display = "block";
+        messageElement.style.color = "red";
+        messageElement.textContent = "Đã xảy ra lỗi: " + error.message;
+      });
+  }
+</script>
+{% endblock %}

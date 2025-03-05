@@ -7,12 +7,12 @@
                 <!-- Hình ảnh (chỉ lấy ảnh đầu tiên) -->
                 <img src="{{ product.images.0 }}" alt="{{ product.name }}" class="product-image">
                 
-                <!-- Giá và giảm giá (giả định có trường discount) -->
+                <!-- Giá và giảm giá -->
                 <div class="price-section">
                     {% if product.discount %}
                         <span class="original-price">{{ product.price }} VNĐ</span>
                         <span class="discount">(-{{ product.discount }}%)</span>
-                        <span class="final-price">{{ product.price|add:"-50" }} VNĐ</span> <!-- Giả định giảm 50, thay bằng logic thực tế -->
+                        <span class="final-price">{{ product.price|add:"-50" }} VNĐ</span>
                     {% else %}
                         <span class="final-price">{{ product.price }} VNĐ</span>
                     {% endif %}
@@ -20,26 +20,78 @@
 
                 <!-- Tên sản phẩm -->
                 <div class="product-name">
-                    {{ product.name }} <!-- Loại bỏ thẻ <a> cũ -->
+                    {{ product.name }}
                 </div>
 
-                <!-- Chi tiết thêm (giả định có lượt xem, đánh giá) -->
+                <!-- Chi tiết thêm -->
                 <div class="product-details">
                     <span class="views">👀 {{ product.views|default:"33K" }}</span>
                     <span class="rating">⭐ {{ product.rating|default:"0" }} / 5</span>
                 </div>
 
-                <!-- Nút xem chi tiết -->
+                <!-- Nút xem chi tiết cho sản phẩm -->
                 <button class="detail-button" data-product-id="{{ product.product_id }}">Xem chi tiết</button>
             </div>
         {% empty %}
             <p>Không có sản phẩm</p>
         {% endfor %}
     </div>
-    <!-- Phần mới: Nút chuyển sang chức năng workout plan -->
+
+    <!-- Phần sách -->
+    <h2>Sách</h2>
+    <div class="product-list">
+        {% for book in books %}
+            <div class="product-item">
+                <!-- Hình ảnh với đường dẫn mặc định nếu không có -->
+                <img src="https://png.pngtree.com/background/20211216/original/pngtree-photographs-of-books-stacked-on-the-grass-in-the-morning-of-picture-image_1519358.jpg" 
+                     alt="{{ book.name }}" 
+                     class="product-image">
+
+                <!-- Giá -->
+                <div class="price-section">
+                    <span class="final-price">{{ book.price }}K VNĐ</span>
+                </div>
+
+                <!-- Tên sách -->
+                <div class="product-name">
+                    {{ book.name }}
+                </div>
+
+                <!-- Chi tiết thêm -->
+                <div class="product-details">
+                    <span class="quantity">Số lượng: {{ book.quantity }}</span>
+                    <span class="rating">⭐ {{ book.rating|default:"0" }} / 5</span>
+                </div>
+
+                <!-- Nút xem chi tiết cho sách -->
+                <button class="book-detail-button" data-product-id="{{ book.product_id }}">Xem chi tiết</button>
+            </div>
+        {% empty %}
+            <p>Không có sách</p>
+        {% endfor %}
+    </div>
+
+    <!-- Phần workout -->
     <div class="workout-section">
         <h2>Tạo Kế Hoạch Tập Luyện</h2>
         <p>Nhập thông tin của bạn để nhận kế hoạch tập luyện cá nhân hóa</p>
         <button class="workout-button" onclick="window.location.href='{% url 'workout_form' %}'">Tạo Kế Hoạch Tập Luyện</button>
     </div>
+
+    <script>
+        // When document is ready
+        $(document).ready(function() {
+            // Product detail button handling
+            $('.detail-button').on('click', function() {
+                var productId = $(this).data('product-id');
+                window.location.href = '/product/' + productId + '/';
+            });
+            
+            // Book detail button handling
+            $('.book-detail-button').on('click', function() {
+                var productId = $(this).data('product-id');
+                window.location.href = '/book/' + productId + '/';
+            });
+        });
+    </script>
 {% endblock %}
